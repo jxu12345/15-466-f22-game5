@@ -152,7 +152,7 @@ void WalkMesh::walk_in_triangle(WalkPoint const &start, glm::vec3 const &step, W
 	// set time and end appropriately.
 	if (ep.x < 0) {
 		float new_time = sp.x / (sp.x - ep.x);
-		std::cout << "x < 0: " << new_time << std::endl;
+		// std::cout << "x < 0: " << new_time << std::endl;
 		if (new_time < min_time) {
 			min_time = new_time;
 			zero_axis = AXIS_X;
@@ -160,7 +160,7 @@ void WalkMesh::walk_in_triangle(WalkPoint const &start, glm::vec3 const &step, W
 	}
 	if (ep.y < 0) {
 		float new_time = sp.y / (sp.y - ep.y);
-		std::cout << "y < 0: " << new_time << std::endl;
+		// std::cout << "y < 0: " << new_time << std::endl;
 		if (new_time < min_time) {
 			min_time = new_time;
 			zero_axis = AXIS_Y;
@@ -168,7 +168,7 @@ void WalkMesh::walk_in_triangle(WalkPoint const &start, glm::vec3 const &step, W
 	}
 	if (ep.z < 0) {
 		float new_time = sp.z / (sp.z - ep.z);
-		std::cout << "z < 0: " << new_time << std::endl;
+		// std::cout << "z < 0: " << new_time << std::endl;
 		if (new_time < min_time) {
 			min_time = new_time;
 			zero_axis = AXIS_Z;
@@ -176,7 +176,7 @@ void WalkMesh::walk_in_triangle(WalkPoint const &start, glm::vec3 const &step, W
 	}
 	
 	time = min_time;
-	std::cout << "time: " << time << std::endl;
+	// std::cout << "time: " << time << std::endl;
 	
 	end.weights = sp + step_barycentric * min_time;
 	end.indices = start.indices;
@@ -192,7 +192,7 @@ void WalkMesh::walk_in_triangle(WalkPoint const &start, glm::vec3 const &step, W
 	} else {
 		//no change
 	} 
-	std::cout << start.weights.x << " " << start.weights.y << " " << start.weights.z << " -> " << end.weights.x << " " << end.weights.y << " " << end.weights.z << " in " << time << std::endl;
+	// std::cout << start.weights.x << " " << start.weights.y << " " << start.weights.z << " -> " << end.weights.x << " " << end.weights.y << " " << end.weights.z << " in " << time << std::endl;
 }
 
 bool WalkMesh::cross_edge(WalkPoint const &start, WalkPoint *end_, glm::quat *rotation_) const {

@@ -1,12 +1,16 @@
 #include "Mode.hpp"
 
 #include "Scene.hpp"
+#include "Sound.hpp"
 #include "WalkMesh.hpp"
 
 #include <glm/glm.hpp>
 
 #include <vector>
 #include <deque>
+
+#include <chrono> //for mt19937 seeding
+#include <random>
 
 struct PlayMode : Mode {
 	PlayMode();
@@ -23,7 +27,8 @@ struct PlayMode : Mode {
 	struct Button {
 		uint8_t downs = 0;
 		uint8_t pressed = 0;
-	} left, right, down, up;
+		bool released = false;
+	} left, right, down, up, space;
 
 	//local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
@@ -36,4 +41,14 @@ struct PlayMode : Mode {
 		//camera is at player's head and will be pitched by mouse up/down motion:
 		Scene::Camera *camera = nullptr;
 	} player;
+
+	struct Goal {
+		Scene::Transform *transform = nullptr;
+		WalkPoint wp;
+	} goal;
+
+	void reposition_goal();
+
+	// soundtrack attached to goal sphere
+	std::shared_ptr< Sound::PlayingSample > soundtrack;
 };

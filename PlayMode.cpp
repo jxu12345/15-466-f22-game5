@@ -13,36 +13,9 @@
 
 #include <random>
 
-// GLuint phonebank_meshes_for_lit_color_texture_program = 0;
-// Load< MeshBuffer > phonebank_meshes(LoadTagDefault, []() -> MeshBuffer const * {
-// 	MeshBuffer const *ret = new MeshBuffer(data_path("phone-bank.pnct"));
-// 	phonebank_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
-// 	return ret;
-// });
-
-// Load< Scene > phonebank_scene(LoadTagDefault, []() -> Scene const * {
-// 	return new Scene(data_path("phone-bank.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
-// 		Mesh const &mesh = phonebank_meshes->lookup(mesh_name);
-
-// 		scene.drawables.emplace_back(transform);
-// 		Scene::Drawable &drawable = scene.drawables.back();
-
-// 		drawable.pipeline = lit_color_texture_program_pipeline;
-
-// 		drawable.pipeline.vao = phonebank_meshes_for_lit_color_texture_program;
-// 		drawable.pipeline.type = mesh.type;
-// 		drawable.pipeline.start = mesh.start;
-// 		drawable.pipeline.count = mesh.count;
-
-// 	});
-// });
-
-// WalkMesh const *walkmesh = nullptr;
-// Load< WalkMeshes > phonebank_walkmeshes(LoadTagDefault, []() -> WalkMeshes const * {
-// 	WalkMeshes *ret = new WalkMeshes(data_path("phone-bank.w"));
-// 	walkmesh = &ret->lookup("WalkMesh");
-// 	return ret;
-// });
+Load< Sound::Sample > soundtrack_sample(LoadTagDefault, []() -> Sound::Sample const * {
+	return new Sound::Sample(data_path("Soaring.wav"));
+});
 
 GLuint map_meshes_for_lit_color_texture_program = 0;
 Load< MeshBuffer > map_meshes(LoadTagDefault, []() -> MeshBuffer const * {
@@ -76,7 +49,29 @@ Load< WalkMeshes > map_walkmeshes(LoadTagDefault, []() -> WalkMeshes const * {
 	return ret;
 });
 
+void PlayMode::reposition_goal() {
+	std::mt19937 mt{ std::random_device{}() };
+
+	// random range: -50 -> 10
+	float x = (mt() % 1000) / 1000.0f * 60.0f - 50.0f;
+	float y = (mt() % 1000) / 1000.0f * 60.0f - 50.0f;
+	float z = (mt() % 1000) / 1000.0f * 60.0f - 50.0f;
+
+	// find walkpoint of goal
+	goal.wp = walkmesh->nearest_walk_point(glm::vec3(x, y, z));
+
+	// transform goal to 0.56f above the surface of the triangle according to walkpoint
+	glm::vec3 normal = walkmesh->to_world_triangle_normal(goal.wp);
+	goal.transform->position = walkmesh->to_world_point(goal.wp) + normal * 0.6f;
+	goal.transform->rotation = glm::rotation(glm::vec3(0.0f, 0.0f, 1.0f), normal);
+
+	// reposition soundtrack
+	soundtrack->position = goal.transform->position;
+}
+
 PlayMode::PlayMode() : scene(*map_scene) {
+	// create soundtrack:
+
 	//create a player transform:
 	scene.transforms.emplace_back();
 	player.transform = &scene.transforms.back();
@@ -89,14 +84,33 @@ PlayMode::PlayMode() : scene(*map_scene) {
 	player.camera->near = 0.01f;
 	player.camera->transform->parent = player.transform;
 
-	//player's eyes are 1.8 units above the ground:
-	player.camera->transform->position = glm::vec3(0.0f, 0.0f, 1.8f);
+	//player's eyes are 1.0 units above the ground:
+	player.camera->transform->position = glm::vec3(0.0f, 0.0f, 1.0f);
 
 	//rotate camera facing direction (-z) to player facing direction (+y):
 	player.camera->transform->rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
 	//start player walking at nearest walk point:
 	player.at = walkmesh->nearest_walk_point(player.transform->position);
+	
+	// get transforms of goal sphere
+	for (auto& transform : scene.transforms) {
+		if (transform.name == "Sphere") {
+			goal.transform = &transform;
+		}
+	}
+	if (goal.transform == nullptr) {
+		throw std::runtime_error("Goal sphere not found");
+	}
+	else {
+		soundtrack = Sound::loop_3D (
+			*soundtrack_sample,
+			1.0f,
+			goal.transform->position,
+			8.0f
+		);
+		reposition_goal();
+	}
 
 }
 
@@ -126,6 +140,11 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.pressed = true;
 			return true;
 		}
+		else if (evt.key.keysym.sym == SDLK_SPACE) {
+			space.downs += 1;
+			space.pressed = true;
+			return true;
+		}
 	} else if (evt.type == SDL_KEYUP) {
 		if (evt.key.keysym.sym == SDLK_a) {
 			left.pressed = false;
@@ -138,6 +157,11 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_s) {
 			down.pressed = false;
+			return true;
+		}
+		else if (evt.key.keysym.sym == SDLK_SPACE) {
+			space.pressed = false;
+			space.released = true;
 			return true;
 		}
 	} else if (evt.type == SDL_MOUSEBUTTONDOWN) {
@@ -169,6 +193,20 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void PlayMode::update(float elapsed) {
+	// manually change sphere position
+	// if(space.released) {
+	// 	reposition_goal();
+	// 	space.released = false;
+	// }
+	
+
+	// checking if player is at goal
+	std::cout << "Player position: " << player.transform->position.x << ", " << player.transform->position.y << ", " << player.transform->position.z << std::endl;
+	std::cout << "Goal position: " << goal.transform->position.x << ", " << goal.transform->position.y << ", " << goal.transform->position.z << std::endl;
+	std::cout << "Distance: " << glm::distance(player.transform->position, goal.transform->position) << std::endl;
+	if (glm::distance(player.transform->position, goal.transform->position) < 1.0f) {
+		reposition_goal();
+	}
 	//player walking:
 	{
 		//combine inputs into a move:
@@ -244,6 +282,13 @@ void PlayMode::update(float elapsed) {
 			player.transform->rotation = glm::normalize(adjust * player.transform->rotation);
 		}
 
+		{ //update listener to camera position:
+			glm::mat4x3 frame = player.camera->transform->make_local_to_world();
+			glm::vec3 frame_right = frame[0];
+			glm::vec3 frame_at = frame[3];
+			Sound::listener.set_position_right(frame_at, frame_right, 1.0f / 60.0f);
+		}
+
 		/*
 		glm::mat4x3 frame = camera->transform->make_local_to_parent();
 		glm::vec3 right = frame[0];
@@ -253,6 +298,7 @@ void PlayMode::update(float elapsed) {
 		camera->transform->position += move.x * right + move.y * forward;
 		*/
 	}
+
 
 	//reset button press counters:
 	left.downs = 0;
