@@ -49,6 +49,7 @@ Load< WalkMeshes > map_walkmeshes(LoadTagDefault, []() -> WalkMeshes const * {
 	return ret;
 });
 
+// repositions goal sphere by randomly picking a space in a 60x60x60 cube and attaching it to the WalkMesh
 void PlayMode::reposition_goal() {
 	std::mt19937 mt{ std::random_device{}() };
 
@@ -103,6 +104,7 @@ PlayMode::PlayMode() : scene(*map_scene) {
 		throw std::runtime_error("Goal sphere not found");
 	}
 	else {
+		// start loop of soundtrack
 		soundtrack = Sound::loop_3D (
 			*soundtrack_sample,
 			1.0f,
@@ -193,17 +195,8 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void PlayMode::update(float elapsed) {
-	// manually change sphere position
-	// if(space.released) {
-	// 	reposition_goal();
-	// 	space.released = false;
-	// }
-	
 
 	// checking if player is at goal
-	std::cout << "Player position: " << player.transform->position.x << ", " << player.transform->position.y << ", " << player.transform->position.z << std::endl;
-	std::cout << "Goal position: " << goal.transform->position.x << ", " << goal.transform->position.y << ", " << goal.transform->position.z << std::endl;
-	std::cout << "Distance: " << glm::distance(player.transform->position, goal.transform->position) << std::endl;
 	if (glm::distance(player.transform->position, goal.transform->position) < 1.0f) {
 		reposition_goal();
 	}
@@ -264,6 +257,8 @@ void PlayMode::update(float elapsed) {
 					remain += 0.01f * d * in;
 				}
 			}
+
+			std::cout << "Distance: " << glm::distance(player.transform->position, goal.transform->position) << std::endl;
 		}
 
 		if (remain != glm::vec3(0.0f)) {

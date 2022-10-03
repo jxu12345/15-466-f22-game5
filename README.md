@@ -1,18 +1,18 @@
-# (TODO: your game's title)
+# 15-466 Game 5: Around the World
 
-Author: (TODO: your name)
+Author: Jason Xu
 
-Design: (TODO: In two sentences or fewer, describe what is new and interesting about your game.)
+Design: A game where you walk around a spherical world and find an object, which can be done by tracing the source of the soundtrack.
 
 Screen Shot:
 
-![Screen Shot](screenshot.png)
+![Screen Shot](dist/screenshot.png)
 
 How To Play:
 
-(TODO: describe the controls and (if needed) goals/strategy.)
+Using the default WASD keys and mouse, the player should walk around the world in any direction to try to locate the gold sphere denoting the goal. The gold sphere plays 3D sound in the space, and the player can find the goal tracing the source of the sound. Headphones or good speakers are recommended.
 
-Sources: (TODO: list a source URL for any assets you did not create yourself. Make sure you have a license for the asset.)
+Sources: This game was built with Game 3 and 5 base code. Assets were self-made. Soundtrack is "Soaring" by Kevin MacLeod, licensed under CC BY 3.0.
 
 This game was built with [NEST](NEST.md).
 
